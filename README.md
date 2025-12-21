@@ -73,6 +73,11 @@ Note: GPIO 34 is input-only on the ESP32, making it suitable for the test trigge
 6. Upload the code to your ESP32.  
 7. On boot, the ESP32 will connect to Wi-Fi, synchronize time via NTP, and start the countdown display.
 
+## Build Guide
+
+For a beginner-friendly, step-by-step tutorial with pictures and detailed explanations, check out the full build guide on Instructables:  
+👉 [ESP32 New Year Countdown Timer on Instructables]([https://www.instructables.com/Smart-WiFi-Fish-Feeder/](https://www.instructables.com/ESP32-WiFi-New-Year-Countdown-Timer-Beginner-Frien/))
+
 ## Target Time
 
 The default target is set to:
