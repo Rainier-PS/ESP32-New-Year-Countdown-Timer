@@ -19,8 +19,8 @@ const char* ssid = "YOUR_WIFI_SSID";
 const char* password = "YOUR_WIFI_PASSWORD";
 
 const char* ntpServer = "pool.ntp.org";
+const char* ntpServer2 = "time.google.com";
 const long gmtOffset_sec = 7 * 3600;
-const int daylightOffset_sec = 0;
 
 time_t targetTime = 0;
 time_t testTargetTime = 0;
@@ -29,9 +29,9 @@ bool testMode = false;
 
 unsigned long lastBeep = 0;
 unsigned long lastLedPulse = 0;
-const unsigned long ledPulseMs = 80;
+const unsigned long ledPulseMs = 50;
 
-time_t getNow() {
+time_t getNowUtc() {
   time_t now;
   time(&now);
   return now;
@@ -46,15 +46,7 @@ void waitForValidTime() {
 }
 
 void setTarget2026() {
-  struct tm t = {};
-  t.tm_year = 2026 - 1900;
-  t.tm_mon  = 0;
-  t.tm_mday = 1;
-  t.tm_hour = 0;
-  t.tm_min  = 0;
-  t.tm_sec  = 0;
-
-  targetTime = mktime(&t);
+  targetTime = 1767200400;
   finalDone = false;
 }
 
@@ -73,12 +65,29 @@ void setup() {
   lcd.clear();
   lcd.print("Connecting WiFi");
 
+  WiFi.mode(WIFI_STA);
+  WiFi.disconnect(true);
+  delay(100);
   WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
+
+  unsigned long start = millis();
+  while (WiFi.status() != WL_CONNECTED && millis() - start < 30000) {
     delay(500);
   }
 
-  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+  lcd.clear();
+  if (WiFi.status() == WL_CONNECTED) {
+    lcd.print("WiFi Connected");
+    delay(500);
+  } else {
+    lcd.print("WiFi Failed");
+    delay(2000);
+  }
+
+  configTime(0, 0, ntpServer, ntpServer2);
+  
+  lcd.clear();
+  lcd.print("Syncing Time...");
   waitForValidTime();
 
   setTarget2026();
@@ -86,26 +95,30 @@ void setup() {
 }
 
 void loop() {
-  time_t now = getNow();
-  struct tm timeinfo;
-  localtime_r(&now, &timeinfo);
-
+  time_t nowUtc = getNowUtc();
   time_t activeTarget = targetTime;
 
   if (!finalDone && isTestTriggered()) {
     if (!testMode) {
       testMode = true;
-      testTargetTime = now + 5;
+      testTargetTime = nowUtc + 10;
       lcd.clear();
     }
     activeTarget = testTargetTime;
-  } else {
+  } else if (!isTestTriggered() && testMode) {
     testMode = false;
+    lcd.clear();
+  } else if (!testMode) {
+    activeTarget = targetTime;
   }
 
-  long remaining = activeTarget - now;
+  long remaining = activeTarget - nowUtc;
 
   if (remaining > 0 && !finalDone) {
+    time_t localDisplayTime = nowUtc + gmtOffset_sec;
+    struct tm timeinfo;
+    gmtime_r(&localDisplayTime, &timeinfo);
+
     int tenths = (millis() % 1000) / 100;
 
     char line1[17];
@@ -125,15 +138,18 @@ void loop() {
 
     unsigned long nowMs = millis();
     int interval = 1000;
-    if (remaining <= 10) interval = 500;
-    if (remaining <= 5)  interval = 250;
-    if (remaining <= 3)  interval = 150;
-    if (remaining <= 1)  interval = 80;
+    
+    if (remaining <= 60) interval = 1000;
+    if (remaining <= 30) interval = 700;
+    if (remaining <= 15) interval = 400;
+    if (remaining <= 10) interval = 250;
+    if (remaining <= 5)  interval = 120;
+    if (remaining <= 2)  interval = 70;
 
     if (nowMs - lastBeep >= interval) {
       lastBeep = nowMs;
       lastLedPulse = nowMs;
-      tone(buzzerPin, 1200, 60);
+      tone(buzzerPin, 2000, 50);
       digitalWrite(ledPin, HIGH);
     }
 
@@ -151,7 +167,10 @@ void loop() {
     lcd.setCursor(0, 1);
     lcd.print("00:00:00.0     ");
 
-    tone(buzzerPin, 2000, 3000);
     digitalWrite(ledPin, HIGH);
+    tone(buzzerPin, 2000); 
+    delay(4000);
+    noTone(buzzerPin);
+    digitalWrite(ledPin, LOW);
   }
 }
