@@ -45,8 +45,8 @@ void waitForValidTime() {
   }
 }
 
-void setTarget2026() {
-  targetTime = 1767200400;
+void setTarget() {
+  targetTime = 1798736400;
   finalDone = false;
 }
 
@@ -90,7 +90,7 @@ void setup() {
   lcd.print("Syncing Time...");
   waitForValidTime();
 
-  setTarget2026();
+  setTarget();
   lcd.clear();
 }
 
