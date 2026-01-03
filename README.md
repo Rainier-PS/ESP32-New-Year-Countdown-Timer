@@ -51,7 +51,7 @@ An ESP32-based New Year countdown timer that synchronizes time using NTP, displa
 | LED      | 2 |
 | Test Pin | 34 |
 
-Note: GPIO 34 is input-only on the ESP32, making it suitable for the test trigger.
+Note: GPIO 34 is input-only and requires an external 10kΩ pull-down resistor to GND to prevent false triggers.
 
 ## Software Requirements
 
@@ -68,7 +68,7 @@ Note: GPIO 34 is input-only on the ESP32, making it suitable for the test trigge
 3. Install required libraries if they are not already available.  
 4. Edit the following variables in the code:  
    - `ssid` and `password`: your Wi-Fi credentials.  
-   - `gmtOffset_sec`: adjust for your local time zone if needed.  
+   - `gmtOffset_sec`: set your local time zone offset (used for display only; internal timing remains UTC). 
 5. Connect the hardware according to the pin configuration.  
 6. Upload the code to your ESP32.  
 7. On boot, the ESP32 will connect to Wi-Fi, synchronize time via NTP, and start the countdown display.
@@ -82,16 +82,20 @@ For a beginner-friendly, step-by-step tutorial with pictures and detailed explan
 
 The default target is set to:
 
-- **January 1, 2026 – 00:00:00 (local time)**
+- **January 1, 2027 – 00:00:00 (local time, GMT+7)**
+  
+You can change the target date and time by modifying the `targetTime` value inside the `setTarget()` function.
 
-You can change the target date and time by modifying the `setTarget2026()` function in the code.
+The target time is stored as a Unix timestamp (UTC).
+
+> Note: The provided timestamp 1798736400 corresponds to Midnight Jan 1, 2027, for GMT+7. If you are in a different timezone, you must update both the gmtOffset_sec and the targetTime timestamp.
 
 ## Test Mode
 
 Test mode allows you to simulate the final countdown without waiting for the real target time.
 
 - Pull **GPIO 34 HIGH** to activate test mode  
-- A 5-second countdown begins  
+- A 10-second countdown begins
 - The LCD shows a test indicator  
 - Buzzer and LED behavior match the real countdown  
 
@@ -100,7 +104,7 @@ This is useful for debugging, demonstrations, and verifying hardware connections
 ## Notes
 
 - Time synchronization waits until a valid NTP timestamp is received before starting.  
-- Beep intervals become shorter as the countdown approaches zero.  
+- Beep frequency increases as the countdown approaches zero
 - Once the final event is triggered, it will not repeat unless the device is reset.  
 
 ## License
